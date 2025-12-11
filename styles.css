@@ -258,6 +258,11 @@ body {
     justify-content: center;
 }
 
+.control-btn.prev-btn,
+.control-btn.next-btn {
+    display: none;
+}
+
 .control-btn:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: scale(1.1);
@@ -705,6 +710,11 @@ body {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
     transform: scale(1.15) translateY(-3px);
     box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
+}
+
+.floating-prev-btn,
+.floating-next-btn {
+    display: none;
 }
 
 .floating-play-btn {

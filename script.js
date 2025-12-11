@@ -609,7 +609,7 @@ class QuranPodcastPlayer {
 
         // Floating previous button
         const floatingPrevBtn = document.createElement('button');
-        floatingPrevBtn.className = 'floating-control-btn';
+        floatingPrevBtn.className = 'floating-control-btn floating-prev-btn';
         floatingPrevBtn.innerHTML = '<i class="fas fa-backward"></i>';
         floatingPrevBtn.addEventListener('click', () => {
             this.prevBtn.click();
@@ -617,7 +617,7 @@ class QuranPodcastPlayer {
 
         // Floating next button
         const floatingNextBtn = document.createElement('button');
-        floatingNextBtn.className = 'floating-control-btn';
+        floatingNextBtn.className = 'floating-control-btn floating-next-btn';
         floatingNextBtn.innerHTML = '<i class="fas fa-forward"></i>';
         floatingNextBtn.addEventListener('click', () => {
             this.nextBtn.click();
