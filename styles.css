@@ -122,6 +122,8 @@ body {
     margin: 0 auto;
     height: 50px;
     transition: none;
+    transform: none;
+    will-change: auto;
 }
 
 .search-container input {
@@ -134,11 +136,17 @@ body {
     height: 100%;
     box-sizing: border-box;
     outline: none;
+    transform: none;
+    will-change: auto;
+    font-size: 16px;
+    /* Prevents iOS zoom on focus */
 }
 
 .search-container input:focus {
     outline: none;
     border-color: var(--secondary-color);
+    transform: none;
+    will-change: auto;
 }
 
 .search-container button {
@@ -1249,6 +1257,12 @@ h5 {
 
     .search-container {
         flex-direction: column;
+        height: auto;
+        min-height: 50px;
+    }
+
+    .search-container input {
+        height: 40px;
     }
 
     .search-container button {
