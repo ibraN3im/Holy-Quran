@@ -48,7 +48,7 @@ body {
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 8px;
+    padding: 0 4px;
     background-color: #c8e6c9;
 }
 
@@ -1264,9 +1264,7 @@ h5 {
 }
 
 @media (max-width: 480px) {
-    .container {
-        padding: 0 15px;
-    }
+
 
     .logo h1 {
         font-size: 1.2rem;
