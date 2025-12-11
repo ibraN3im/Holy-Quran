@@ -2,6 +2,8 @@
 class QuranPodcastPlayer {
     constructor() {
         this.audioFiles = [];
+        this.currentPage = 1;
+        this.filesPerPage = 20; // Load 20 files at a time
         this.currentTrack = null;
         this.isPlaying = false;
         this.currentFilter = 'all';
@@ -179,7 +181,15 @@ class QuranPodcastPlayer {
     async loadAudioFiles() {
         try {
             // Generate audio file data based on the directory listing
-            this.audioFiles = await this.generateAudioFileData();
+            const newFiles = await this.generateAudioFileData();
+
+            // For first load, replace the array, for subsequent loads, append
+            if (this.currentPage === 1) {
+                this.audioFiles = newFiles;
+            } else {
+                this.audioFiles = [...this.audioFiles, ...newFiles];
+            }
+
             this.totalTracks.textContent = this.audioFiles.length;
             this.renderEpisodes();
             this.renderFavorites();
@@ -261,8 +271,13 @@ class QuranPodcastPlayer {
 
         const uniqueFiles = [...new Set(files)];
 
-        // Get actual durations for all files
-        const filePromises = uniqueFiles.map(async (filename, index) => {
+        // Calculate which files to load based on current page
+        const startIndex = (this.currentPage - 1) * this.filesPerPage;
+        const endIndex = startIndex + this.filesPerPage;
+        const filesToLoad = uniqueFiles.slice(startIndex, endIndex);
+
+        // Get actual durations for files on current page
+        const filePromises = filesToLoad.map(async (filename, index) => {
             const title = this.generateTitle(filename);
             const surah = this.generateSurahInfo(filename);
             const type = filename.includes('-') ? 'range' : 'single';
@@ -271,14 +286,16 @@ class QuranPodcastPlayer {
             // Get actual duration
             let duration = '0:00';
             try {
-                duration = await this.getAudioDuration(`audio/${filename}`);
+                // Use the full URL for getting duration
+                const fullUrl = `https://ibran3im.github.io/Holy-Quran/audio/${filename}`;
+                duration = await this.getAudioDuration(fullUrl);
             } catch (error) {
                 console.warn(`Could not get duration for ${filename}:`, error);
                 duration = this.estimateDuration(filename);
             }
 
             return {
-                id: index + 1,
+                id: startIndex + index + 1,
                 filename: filename,
                 title: title,
                 surah: surah,
@@ -449,17 +466,41 @@ class QuranPodcastPlayer {
             });
         }
 
-        this.episodesGrid.innerHTML = '';
+        // For first page, clear the grid, for subsequent pages, keep existing content
+        if (this.currentPage === 1) {
+            this.episodesGrid.innerHTML = '';
+        } else {
+            // Remove any existing loading indicator
+            const existingLoader = this.episodesGrid.querySelector('.loading-more');
+            if (existingLoader) {
+                existingLoader.remove();
+            }
+        }
 
         if (filteredFiles.length === 0) {
             this.episodesGrid.innerHTML = '<div class="loading">لا توجد نتائج مطابقة</div>';
             return;
         }
 
-        filteredFiles.forEach(file => {
+        // Render only new files when loading more (infinite scroll)
+        const startIndex = (this.currentPage - 1) * this.filesPerPage;
+        const filesToRender = this.currentPage === 1 ?
+            filteredFiles :
+            filteredFiles.slice(startIndex);
+
+        filesToRender.forEach(file => {
             const episodeCard = this.createEpisodeCard(file);
             this.episodesGrid.appendChild(episodeCard);
         });
+
+        // Add loading indicator if there are more files to load
+        const totalFiles = 262;
+        if (this.audioFiles.length < totalFiles) {
+            const loader = document.createElement('div');
+            loader.className = 'loading-more';
+            loader.innerHTML = '<div class="loading">تحميل المزيد من التفسيرات...</div>';
+            this.episodesGrid.appendChild(loader);
+        }
     }
 
     createEpisodeCard(file) {
@@ -554,6 +595,32 @@ class QuranPodcastPlayer {
         this.trackFileListen(file.filename);
     }
 
+    pauseTrack() {
+        this.audioPlayer.pause();
+        this.isPlaying = false;
+        this.updatePlayButton();
+        this.updateFloatingPlayButton();
+    }
+
+    resumeTrack() {
+        this.audioPlayer.play();
+        this.isPlaying = true;
+        this.updatePlayButton();
+        this.updateFloatingPlayButton();
+    }
+
+    handleInfiniteScroll() {
+        // Check if user has scrolled to the bottom of the page
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
+            // Load more files if we haven't loaded all of them yet
+            const totalFiles = 262; // Total number of audio files
+            if (this.audioFiles.length < totalFiles) {
+                this.currentPage++;
+                this.loadAudioFiles();
+            }
+        }
+    }
+
     updatePlayButton() {
         const icon = this.playBtn.querySelector('i');
         if (this.isPlaying) {
@@ -584,15 +651,14 @@ class QuranPodcastPlayer {
             }
 
             if (this.isPlaying) {
-                this.audioPlayer.pause();
-                this.isPlaying = false;
+                this.pauseTrack();
             } else {
-                this.audioPlayer.play();
-                this.isPlaying = true;
+                this.resumeTrack();
             }
-            this.updatePlayButton();
-            this.updateFloatingPlayButton();
         });
+
+        // Add infinite scroll listener
+        window.addEventListener('scroll', this.handleInfiniteScroll.bind(this));
 
         // Previous button
         this.prevBtn.addEventListener('click', () => {
