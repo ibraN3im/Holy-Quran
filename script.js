@@ -3,7 +3,7 @@ class QuranPodcastPlayer {
     constructor() {
         this.audioFiles = [];
         this.currentPage = 1;
-        this.filesPerPage = 20; // Load 20 files at a time
+        this.filesPerPage = 33; // Load ~33 files per page for 8 total pages
         this.currentTrack = null;
         this.isPlaying = false;
         this.currentFilter = 'all';
@@ -32,8 +32,8 @@ class QuranPodcastPlayer {
         this.duration = document.getElementById('duration');
         this.progress = document.getElementById('progress');
         this.episodesGrid = document.getElementById('episodesGrid');
-        this.loadMoreContainer = document.getElementById('loadMoreContainer');
-        this.loadMoreBtn = document.getElementById('loadMoreBtn');
+        this.paginationContainer = document.getElementById('paginationContainer');
+        this.pageNumbers = document.getElementById('pageNumbers');
         this.totalTracks = document.getElementById('totalTracks');
 
         // Floating player elements
@@ -54,9 +54,6 @@ class QuranPodcastPlayer {
 
         // Filter elements
         this.filterButtons = document.querySelectorAll('.filter-btn');
-
-        // Theme toggle
-        this.themeToggle = document.getElementById('themeToggle');
 
         // Favorites elements
         this.favoritesToggle = document.getElementById('favoritesToggle');
@@ -91,7 +88,14 @@ class QuranPodcastPlayer {
             this.favorites.push(file);
         }
         this.saveFavorites();
-        this.renderEpisodes(this.currentFilter, this.searchInput.value);
+        // Update the favorite button in UI without re-rendering entire grid
+        const fileCard = document.querySelector(`[data-id="${file.id}"]`);
+        if (fileCard) {
+            const favBtn = fileCard.querySelector('.favorite-btn');
+            if (favBtn) {
+                favBtn.classList.toggle('favorited');
+            }
+        }
         this.renderFavorites();
     }
 
@@ -185,15 +189,12 @@ class QuranPodcastPlayer {
             // Generate audio file data based on the directory listing
             const newFiles = await this.generateAudioFileData();
 
-            // For first load, replace the array, for subsequent loads, append
-            if (this.currentPage === 1) {
-                this.audioFiles = newFiles;
-            } else {
-                this.audioFiles = [...this.audioFiles, ...newFiles];
-            }
+            // Always replace the array to show only current page content
+            this.audioFiles = newFiles;
 
-            this.totalTracks.textContent = this.audioFiles.length;
-            this.renderEpisodes();
+            this.totalTracks.textContent = newFiles.length;
+            // Preserve current filter and search when rendering
+            this.renderEpisodes(this.currentFilter, this.searchInput.value);
             this.renderFavorites();
         } catch (error) {
             console.error('Error loading audio files:', error);
@@ -278,23 +279,12 @@ class QuranPodcastPlayer {
         const endIndex = startIndex + this.filesPerPage;
         const filesToLoad = uniqueFiles.slice(startIndex, endIndex);
 
-        // Get actual durations for files on current page
-        const filePromises = filesToLoad.map(async (filename, index) => {
+        // Create file data without fetching actual durations (for better performance)
+        const fileData = filesToLoad.map((filename, index) => {
             const title = this.generateTitle(filename);
             const surah = this.generateSurahInfo(filename);
             const type = filename.includes('-') ? 'range' : 'single';
             const fileStats = this.getFileStats(filename);
-
-            // Get actual duration
-            let duration = '0:00';
-            try {
-                // Use the full URL for getting duration
-                const fullUrl = `https://ibran3im.github.io/Holy-Quran/audio/${filename}`;
-                duration = await this.getAudioDuration(fullUrl);
-            } catch (error) {
-                console.warn(`Could not get duration for ${filename}:`, error);
-                duration = this.estimateDuration(filename);
-            }
 
             return {
                 id: startIndex + index + 1,
@@ -302,14 +292,14 @@ class QuranPodcastPlayer {
                 title: title,
                 surah: surah,
                 type: type,
-                duration: duration,
+                duration: '0:00', // Will be updated when played
                 listens: fileStats.listens,
                 downloads: fileStats.downloads,
                 url: `https://ibran3im.github.io/Holy-Quran/audio/${filename}`
             };
         });
 
-        return Promise.all(filePromises);
+        return fileData;
     }
 
     getFileStats(filename) {
@@ -357,8 +347,14 @@ class QuranPodcastPlayer {
         if (file) {
             file.listens = stats.listens;
             file.downloads = stats.downloads;
-            this.renderEpisodes(this.currentFilter, this.searchInput.value);
-            this.renderFavorites();
+            // Update the file card in UI without re-rendering entire grid
+            const fileCard = document.querySelector(`[data-filename="${filename}"]`);
+            if (fileCard) {
+                const listenCount = fileCard.querySelector('.listens');
+                const downloadCount = fileCard.querySelector('.downloads');
+                if (listenCount) listenCount.textContent = `${stats.listens} استماع`;
+                if (downloadCount) downloadCount.textContent = `${stats.downloads} تحميل`;
+            }
         }
     }
 
@@ -416,6 +412,11 @@ class QuranPodcastPlayer {
     }
 
     renderEpisodes(filter = 'all', searchTerm = '') {
+        // Don't render if audioFiles is empty (loading in progress)
+        if (this.audioFiles.length === 0) {
+            return;
+        }
+
         let filteredFiles = this.audioFiles;
 
         // Apply filter
@@ -468,63 +469,107 @@ class QuranPodcastPlayer {
             });
         }
 
-        // For first page, clear the grid, for subsequent pages, keep existing content
-        if (this.currentPage === 1) {
+        // Only clear the grid if we have results to render
+        if (filteredFiles.length > 0) {
             this.episodesGrid.innerHTML = '';
-        } else {
-            // Remove any existing loading indicator
-            const existingLoader = this.episodesGrid.querySelector('.loading-more');
-            if (existingLoader) {
-                existingLoader.remove();
-            }
-        }
 
-        if (filteredFiles.length === 0) {
+            // Render files for current page
+            // When no search/filter is applied, use audioFiles directly (already paginated)
+            // When search/filter is applied, paginate the filtered results
+            let filesToRender = filteredFiles;
+            if (filter !== 'all' || searchTerm) {
+                const startIndex = (this.currentPage - 1) * this.filesPerPage;
+                const endIndex = startIndex + this.filesPerPage;
+                filesToRender = filteredFiles.slice(startIndex, endIndex);
+            }
+
+            filesToRender.forEach(file => {
+                const episodeCard = this.createEpisodeCard(file);
+                this.episodesGrid.appendChild(episodeCard);
+            });
+        } else if (searchTerm || filter !== 'all') {
+            // Only show "no results" if there was a search/filter applied
             this.episodesGrid.innerHTML = '<div class="loading">لا توجد نتائج مطابقة</div>';
             return;
         }
 
-        // Render only new files when loading more (infinite scroll)
-        const startIndex = (this.currentPage - 1) * this.filesPerPage;
-        const filesToRender = this.currentPage === 1 ?
-            filteredFiles :
-            filteredFiles.slice(startIndex);
-
-        filesToRender.forEach(file => {
-            const episodeCard = this.createEpisodeCard(file);
-            this.episodesGrid.appendChild(episodeCard);
-        });
-
-        // Show or hide the load more button
+        // Show pagination controls with page numbers
         const totalFiles = 262;
-        if (this.audioFiles.length < totalFiles) {
-            // Remove any existing loading indicator
-            const existingLoader = this.episodesGrid.querySelector('.loading-more');
-            if (existingLoader) {
-                existingLoader.remove();
-            }
+        const totalPages = Math.ceil(totalFiles / this.filesPerPage);
 
-            // Show the load more button
-            if (this.loadMoreContainer) {
-                this.loadMoreContainer.style.display = 'block';
-            }
-        } else {
-            // Hide the load more button when all files are loaded
-            if (this.loadMoreContainer) {
-                this.loadMoreContainer.style.display = 'none';
-            }
+        // Show pagination controls
+        if (this.paginationContainer) {
+            this.paginationContainer.style.display = 'block';
+        }
 
-            // Remove any existing loading indicator
-            const existingLoader = this.episodesGrid.querySelector('.loading-more');
-            if (existingLoader) {
-                existingLoader.remove();
+        // Generate page number buttons
+        this.generatePageButtons(totalPages);
+    }
+
+    generatePageButtons(totalPages) {
+        if (!this.pageNumbers) return;
+
+        // Clear existing page buttons
+        this.pageNumbers.innerHTML = '';
+
+        // Create page buttons (show up to 10 pages at a time)
+        const startPage = Math.max(1, this.currentPage - 4);
+        const endPage = Math.min(totalPages, startPage + 9);
+
+        // Previous ellipsis
+        if (startPage > 1) {
+            const firstBtn = document.createElement('button');
+            firstBtn.className = 'page-number-btn';
+            firstBtn.textContent = '1';
+            firstBtn.addEventListener('click', () => this.goToPage(1));
+            this.pageNumbers.appendChild(firstBtn);
+
+            if (startPage > 2) {
+                const ellipsis = document.createElement('span');
+                ellipsis.className = 'ellipsis';
+                ellipsis.textContent = '...';
+                this.pageNumbers.appendChild(ellipsis);
             }
         }
+
+        // Page number buttons
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = 'page-number-btn' + (i === this.currentPage ? ' active' : '');
+            pageBtn.textContent = i;
+            pageBtn.addEventListener('click', () => this.goToPage(i));
+            this.pageNumbers.appendChild(pageBtn);
+        }
+
+        // Next ellipsis
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const ellipsis = document.createElement('span');
+                ellipsis.className = 'ellipsis';
+                ellipsis.textContent = '...';
+                this.pageNumbers.appendChild(ellipsis);
+            }
+
+            const lastBtn = document.createElement('button');
+            lastBtn.className = 'page-number-btn';
+            lastBtn.textContent = totalPages;
+            lastBtn.addEventListener('click', () => this.goToPage(totalPages));
+            this.pageNumbers.appendChild(lastBtn);
+        }
+    }
+
+    goToPage(pageNumber) {
+        this.currentPage = pageNumber;
+        // Reset the audio files array to load fresh data for this page
+        this.audioFiles = [];
+        this.loadAudioFiles();
     }
 
     createEpisodeCard(file) {
         const card = document.createElement('div');
         card.className = 'episode-card';
+        card.setAttribute('data-id', file.id);
+        card.setAttribute('data-filename', file.filename);
         if (this.currentTrack && this.currentTrack.id === file.id) {
             card.classList.add('playing');
         }
@@ -543,20 +588,20 @@ class QuranPodcastPlayer {
                     </span>
                 </div>
                 <div class="episode-actions">
-                    <button class="action-btn ${this.isFavorite(file) ? 'favorited' : ''}" data-id="${file.id}" data-action="favorite">
+                    <button class="action-btn favorite-btn ${this.isFavorite(file) ? 'favorited' : ''}" data-id="${file.id}" data-action="favorite">
                         <i class="fas fa-heart"></i>
                         ${this.isFavorite(file) ? 'مفضلة' : 'لمفضلة'}
                     </button>
                     <button class="action-btn download" data-id="${file.id}" data-action="download">
                         <i class="fas fa-download"></i>
                         تحميل
-                        <span class="download-stats">
+                        <span class="download-stats downloads">
                             <i class="fas fa-eye"></i> ${file.downloads}
                         </span>
                     </button>
-                    <span class="listen-badge">
+                    <span class="listen-badge listens">
                         <i class="fas fa-play-circle"></i>
-                        استماع
+                        ${file.listens} استماع
                     </span>
                 </div>
             </div>
@@ -586,6 +631,30 @@ class QuranPodcastPlayer {
         this.currentTitle.textContent = file.title;
         this.currentSurah.textContent = file.surah;
 
+        // Update duration when metadata is loaded
+        const updateDuration = () => {
+            if (this.audioPlayer.duration && !isNaN(this.audioPlayer.duration)) {
+                const minutes = Math.floor(this.audioPlayer.duration / 60);
+                const seconds = Math.floor(this.audioPlayer.duration % 60);
+                const durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                // Update the file duration in our data
+                const fileIndex = this.audioFiles.findIndex(f => f.id === file.id);
+                if (fileIndex !== -1) {
+                    this.audioFiles[fileIndex].duration = durationText;
+                }
+
+                // Update the duration display
+                this.duration.textContent = durationText;
+
+                // Remove the event listener to prevent multiple updates
+                this.audioPlayer.removeEventListener('loadedmetadata', updateDuration);
+            }
+        };
+
+        // Add event listener for metadata loading
+        this.audioPlayer.addEventListener('loadedmetadata', updateDuration);
+
         // Update floating player
         this.floatingTitle.textContent = file.title;
         this.floatingSurah.textContent = file.surah;
@@ -609,7 +678,15 @@ class QuranPodcastPlayer {
         this.isPlaying = true;
         this.updatePlayButton();
         this.updateFloatingPlayButton();
-        this.renderEpisodes(this.currentFilter, this.searchInput.value);
+        // Update the current track in UI without re-rendering entire grid
+        const currentCard = document.querySelector('.episode-card.playing');
+        if (currentCard) {
+            currentCard.classList.remove('playing');
+        }
+        const newCard = document.querySelector(`[data-id="${file.id}"]`);
+        if (newCard) {
+            newCard.classList.add('playing');
+        }
         this.trackListen();
         this.trackFileListen(file.filename);
     }
@@ -694,7 +771,7 @@ class QuranPodcastPlayer {
             });
         }
 
-        // Previous button
+        // Previous button (for audio track navigation)
         this.prevBtn.addEventListener('click', () => {
             if (!this.currentTrack) return;
 
@@ -820,17 +897,6 @@ class QuranPodcastPlayer {
                 this.currentFilter = btn.dataset.filter;
                 this.renderEpisodes(this.currentFilter, this.searchInput.value);
             });
-        });
-
-        // Theme toggle
-        this.themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-theme');
-            const icon = this.themeToggle.querySelector('i');
-            if (document.body.classList.contains('dark-theme')) {
-                icon.className = 'fas fa-sun';
-            } else {
-                icon.className = 'fas fa-moon';
-            }
         });
 
         // Favorites toggle

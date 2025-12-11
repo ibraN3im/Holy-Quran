@@ -33,15 +33,26 @@
                 <button class="nav-btn" id="searchToggle">
                     <i class="fas fa-search"></i>
                 </button>
-                <button class="nav-btn" id="themeToggle">
-                    <i class="fas fa-moon"></i>
-                </button>
             </nav>
         </div>
     </header>
 
     <main class="main">
         <div class="container">
+            <!-- Introduction Section -->
+            <div class="intro-section">
+                <div class="intro-content">
+                    <h2>مرحباً بك في بودكاست</h2>
+                    <p>موقع متخصص في تفسير القرآن الكريم للدكتور عبد الطيب، بقراءة الشيخ صديق أحمد حمدون. يحتوي على <strong>أكثر من 260 مقطع صوتي </strong> مقسمة على 8 صفحات، يمكنك الاستماع المباشر.</p>
+                    <!-- <ul class="intro-features">
+                        <li><i class="fas fa-headphones"></i> استمع مباشرة للتفسيرات</li>
+                        <li><i class="fas fa-search"></i> ابحث عن تفسير معين</li>
+                        <li><i class="fas fa-heart"></i> احفظ تفسيراتك المفضلة</li>
+                        <li><i class="fas fa-moon"></i> وضع ليلي مريح</li>
+                    </ul> -->
+                </div>
+            </div>
+
             <div class="search-section" id="searchSection">
                 <div class="search-container">
                     <input type="text" id="searchInput" placeholder="ابحث بالارقام فقط" pattern="[0-9-]+">
@@ -98,12 +109,17 @@
                 </aside>
 
                 <section class="episodes-section">
-                    <div class="section-header">
-                        <h5>اللهم اجعل عملي خالصاً لوجهك الكريم</h5>
-                    </div>
 
                     <div class="episodes-grid" id="episodesGrid">
                         <!-- Episodes will be loaded here dynamically -->
+                    </div>
+
+                    <!-- Pagination Controls -->
+                    <div class="pagination-container" id="paginationContainer"
+                        style="display: none; text-align: center; margin: 20px 0;">
+                        <div class="pagination-controls">
+                            <div class="page-numbers" id="pageNumbers"></div>
+                        </div>
                     </div>
 
                     <!-- Load More Button -->
@@ -164,7 +180,8 @@
                 <div class="footer-message">
                     <h4 class="blue">تفسير القرآن الكريم :<span class="wight"> الدكتور عبد الطيب</span></h4>
                     <h4 class="blue">القارئ:<span class="wight"> الشيخ صديق احمد حمدون</span></h4>
-                    <p>لا تنسونا من صالح الدعاء</p>
+                                           <h5>اللهم اجعل عملي خالصاً لوجهك الكريم</h5>
+
                     <p>&copy; 2026 تفسير القرآن الكريم - جميع الحقوق محفوظة</p>
                 </div>
             </div>
