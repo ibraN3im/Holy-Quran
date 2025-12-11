@@ -179,7 +179,7 @@ class QuranPodcastPlayer {
     async loadAudioFiles() {
         try {
             // Generate audio file data based on the directory listing
-            this.audioFiles = this.generateAudioFileData();
+            this.audioFiles = await this.generateAudioFileData();
             this.totalTracks.textContent = this.audioFiles.length;
             this.renderEpisodes();
             this.renderFavorites();
@@ -189,7 +189,7 @@ class QuranPodcastPlayer {
         }
     }
 
-    generateAudioFileData() {
+    async generateAudioFileData() {
         const files = [
             '025Re1.mp3', '026Re1.mp3', '027Re1.mp3', '028Re1.mp3',
             '1-11Re1.mp3', '1-13Re1.mp3', '1-14Re1.mp3', '1-15Re1.mp3',
@@ -261,12 +261,21 @@ class QuranPodcastPlayer {
 
         const uniqueFiles = [...new Set(files)];
 
-        return uniqueFiles.map((filename, index) => {
+        // Get actual durations for all files
+        const filePromises = uniqueFiles.map(async (filename, index) => {
             const title = this.generateTitle(filename);
             const surah = this.generateSurahInfo(filename);
             const type = filename.includes('-') ? 'range' : 'single';
-            const duration = this.estimateDuration(filename);
             const fileStats = this.getFileStats(filename);
+
+            // Get actual duration
+            let duration = '0:00';
+            try {
+                duration = await this.getAudioDuration(`audio/${filename}`);
+            } catch (error) {
+                console.warn(`Could not get duration for ${filename}:`, error);
+                duration = this.estimateDuration(filename);
+            }
 
             return {
                 id: index + 1,
@@ -280,6 +289,8 @@ class QuranPodcastPlayer {
                 url: `audio/${filename}`
             };
         });
+
+        return Promise.all(filePromises);
     }
 
     getFileStats(filename) {
@@ -288,6 +299,20 @@ class QuranPodcastPlayer {
             return JSON.parse(savedStats);
         }
         return { listens: 0, downloads: 0 };
+    }
+
+    getAudioDuration(url) {
+        return new Promise((resolve, reject) => {
+            const audio = new Audio();
+            audio.addEventListener('loadedmetadata', () => {
+                const duration = audio.duration;
+                const minutes = Math.floor(duration / 60);
+                const seconds = Math.floor(duration % 60);
+                resolve(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+            });
+            audio.addEventListener('error', reject);
+            audio.src = url;
+        });
     }
 
     saveFileStats(filename, stats) {
@@ -367,21 +392,8 @@ class QuranPodcastPlayer {
     }
 
     estimateDuration(filename) {
-        // Estimate duration based on file size patterns
-        const sizes = {
-            '025Re1.mp3': '45:22',
-            '026Re1.mp3': '67:08',
-            '027Re1.mp3': '47:07',
-            '028Re1.mp3': '42:58',
-            '19Re1.mp3': '156:45',
-            '21Re1.mp3': '147:18',
-            '1Re1.mp3': '67:50',
-            '2Re1.mp3': '56:55',
-            'out1.mp3': '512:35',
-            'out2.mp3': '245:12'
-        };
-
-        return sizes[filename] || '45:00';
+        // Fallback duration if we can't get the actual duration
+        return '0:00';
     }
 
     renderEpisodes(filter = 'all', searchTerm = '') {
