@@ -286,7 +286,7 @@ class QuranPodcastPlayer {
                 duration: duration,
                 listens: fileStats.listens,
                 downloads: fileStats.downloads,
-                url: `audio/${filename}`
+                url: `https://ibran3im.github.io/Holy-Quran/audio/${filename}`
             };
         });
 
