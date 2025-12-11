@@ -96,7 +96,7 @@ class QuranPodcastPlayer {
     }
 
     downloadFile(file) {
-        const githubUrl = `https://raw.githubusercontent.com/your-username/your-repo/main/audio/${file.filename}`;
+        const githubUrl = `https://raw.githubusercontent.com/ibraN3im/Holy-Quran/main/audio/${file.filename}`;
 
         fetch(githubUrl)
             .then(response => {
@@ -606,6 +606,27 @@ class QuranPodcastPlayer {
         this.floatingPlay.addEventListener('click', () => {
             this.playBtn.click();
         });
+
+        // Floating previous button
+        const floatingPrevBtn = document.createElement('button');
+        floatingPrevBtn.className = 'floating-control-btn';
+        floatingPrevBtn.innerHTML = '<i class="fas fa-backward"></i>';
+        floatingPrevBtn.addEventListener('click', () => {
+            this.prevBtn.click();
+        });
+
+        // Floating next button
+        const floatingNextBtn = document.createElement('button');
+        floatingNextBtn.className = 'floating-control-btn';
+        floatingNextBtn.innerHTML = '<i class="fas fa-forward"></i>';
+        floatingNextBtn.addEventListener('click', () => {
+            this.nextBtn.click();
+        });
+
+        // Insert the buttons into the floating player
+        const floatingControls = document.querySelector('.floating-controls');
+        floatingControls.insertBefore(floatingPrevBtn, this.floatingPlay);
+        floatingControls.appendChild(floatingNextBtn);
 
         // Floating progress slider
         this.floatingProgressSlider.addEventListener('input', (e) => {

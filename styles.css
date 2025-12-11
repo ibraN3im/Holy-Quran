@@ -119,6 +119,7 @@ body {
     gap: 1rem;
     max-width: 600px;
     margin: 0 auto;
+    height: 50px;
 }
 
 .search-container input {
@@ -128,6 +129,8 @@ body {
     border-radius: 50px;
     transition: var(--transition);
     color: var(--primary-color);
+    height: 100%;
+    box-sizing: border-box;
 }
 
 .search-container input:focus {
