@@ -477,12 +477,12 @@ body {
     top: 10%;
     left: 4%;
     padding: 2px 8px;
-    box-shadow: 0px 0px 15px 0px #ffffff;
+    box-shadow: 0px 0px 7px 0px #ffffff;
     border-radius: 50%;
 }
 
 .play-overlay i {
-    font-size: 3.5rem;
+    font-size: 2.5rem;
     color: #c0392b;
     transform: scale(0.8);
     transition: all 0.3s ease;
@@ -1353,4 +1353,39 @@ body.dark-theme .search-container input {
     background: var(--card-background);
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Load more button */
+.load-more-container {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.load-more-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.load-more-btn:hover {
+    background: var(--secondary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.load-more-btn:active {
+    transform: translateY(0);
+}
+
+/* Dark theme adjustments */
+body.dark-theme .load-more-btn {
+    background: var(--primary-color);
+    color: white;
 }

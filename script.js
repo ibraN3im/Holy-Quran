@@ -32,6 +32,8 @@ class QuranPodcastPlayer {
         this.duration = document.getElementById('duration');
         this.progress = document.getElementById('progress');
         this.episodesGrid = document.getElementById('episodesGrid');
+        this.loadMoreContainer = document.getElementById('loadMoreContainer');
+        this.loadMoreBtn = document.getElementById('loadMoreBtn');
         this.totalTracks = document.getElementById('totalTracks');
 
         // Floating player elements
@@ -493,13 +495,30 @@ class QuranPodcastPlayer {
             this.episodesGrid.appendChild(episodeCard);
         });
 
-        // Add loading indicator if there are more files to load
+        // Show or hide the load more button
         const totalFiles = 262;
         if (this.audioFiles.length < totalFiles) {
-            const loader = document.createElement('div');
-            loader.className = 'loading-more';
-            loader.innerHTML = '<div class="loading">تحميل المزيد من التفسيرات...</div>';
-            this.episodesGrid.appendChild(loader);
+            // Remove any existing loading indicator
+            const existingLoader = this.episodesGrid.querySelector('.loading-more');
+            if (existingLoader) {
+                existingLoader.remove();
+            }
+
+            // Show the load more button
+            if (this.loadMoreContainer) {
+                this.loadMoreContainer.style.display = 'block';
+            }
+        } else {
+            // Hide the load more button when all files are loaded
+            if (this.loadMoreContainer) {
+                this.loadMoreContainer.style.display = 'none';
+            }
+
+            // Remove any existing loading indicator
+            const existingLoader = this.episodesGrid.querySelector('.loading-more');
+            if (existingLoader) {
+                existingLoader.remove();
+            }
         }
     }
 
@@ -621,6 +640,14 @@ class QuranPodcastPlayer {
         }
     }
 
+    loadMoreFiles() {
+        const totalFiles = 262; // Total number of audio files
+        if (this.audioFiles.length < totalFiles) {
+            this.currentPage++;
+            this.loadAudioFiles();
+        }
+    }
+
     updatePlayButton() {
         const icon = this.playBtn.querySelector('i');
         if (this.isPlaying) {
@@ -659,6 +686,13 @@ class QuranPodcastPlayer {
 
         // Add infinite scroll listener
         window.addEventListener('scroll', this.handleInfiniteScroll.bind(this));
+
+        // Add load more button listener
+        if (this.loadMoreBtn) {
+            this.loadMoreBtn.addEventListener('click', () => {
+                this.loadMoreFiles();
+            });
+        }
 
         // Previous button
         this.prevBtn.addEventListener('click', () => {
