@@ -299,6 +299,9 @@ class QuranPodcastPlayer {
             };
         });
 
+        // Preload durations for better user experience
+        this.preloadDurations(fileData);
+
         return fileData;
     }
 
@@ -322,6 +325,36 @@ class QuranPodcastPlayer {
             audio.addEventListener('error', reject);
             audio.src = url;
         });
+    }
+
+    async preloadDurations(fileData) {
+        // Preload durations for the first 10 files to improve user experience
+        const preloadCount = Math.min(10, fileData.length);
+
+        for (let i = 0; i < preloadCount; i++) {
+            try {
+                const duration = await this.getAudioDuration(fileData[i].url);
+                fileData[i].duration = duration;
+
+                // Update the UI for this file if it's already rendered
+                this.updateDurationInUI(fileData[i].id, duration);
+            } catch (error) {
+                console.warn(`Failed to load duration for ${fileData[i].filename}:`, error);
+            }
+        }
+    }
+
+    updateDurationInUI(fileId, duration) {
+        const fileCard = document.querySelector(`[data-id="${fileId}"]`);
+        if (fileCard) {
+            const durationElement = fileCard.querySelector('.episode-duration');
+            if (durationElement) {
+                durationElement.innerHTML = `
+                    <i class="fas fa-clock"></i>
+                    ${duration}
+                `;
+            }
+        }
     }
 
     saveFileStats(filename, stats) {
@@ -582,7 +615,7 @@ class QuranPodcastPlayer {
                 </div>
                 <div class="episode-title">${file.title}</div>
                 <div class="episode-meta">
-                    <span class="episode-duration">
+                    <span class="episode-duration" data-file-id="${file.id}">
                         <i class="fas fa-clock"></i>
                         ${file.duration}
                     </span>
@@ -590,17 +623,15 @@ class QuranPodcastPlayer {
                 <div class="episode-actions">
                     <button class="action-btn favorite-btn ${this.isFavorite(file) ? 'favorited' : ''}" data-id="${file.id}" data-action="favorite">
                         <i class="fas fa-heart"></i>
-                        ${this.isFavorite(file) ? 'مفضلة' : 'لمفضلة'}
+                        ${this.isFavorite(file) ? 'مفضله' : 'المفضله'}
                     </button>
                     <button class="action-btn download" data-id="${file.id}" data-action="download">
-                        <i class="fas fa-download"></i>
                         تحميل
                         <span class="download-stats downloads">
-                            <i class="fas fa-eye"></i> ${file.downloads}
+                             ${file.downloads}
                         </span>
                     </button>
                     <span class="listen-badge listens">
-                        <i class="fas fa-play-circle"></i>
                         ${file.listens} استماع
                     </span>
                 </div>
@@ -647,6 +678,9 @@ class QuranPodcastPlayer {
                 // Update the duration display
                 this.duration.textContent = durationText;
 
+                // Update the duration in the episode card UI
+                this.updateDurationInUI(file.id, durationText);
+
                 // Remove the event listener to prevent multiple updates
                 this.audioPlayer.removeEventListener('loadedmetadata', updateDuration);
             }
@@ -654,6 +688,16 @@ class QuranPodcastPlayer {
 
         // Add event listener for metadata loading
         this.audioPlayer.addEventListener('loadedmetadata', updateDuration);
+
+        // Also update duration in the file data immediately
+        if (file.duration === '0:00') {
+            this.getAudioDuration(file.url).then(duration => {
+                file.duration = duration;
+                this.updateDurationInUI(file.id, duration);
+            }).catch(err => {
+                console.warn('Could not load duration:', err);
+            });
+        }
 
         // Update floating player
         this.floatingTitle.textContent = file.title;

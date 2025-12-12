@@ -54,7 +54,7 @@ body {
 
 /* Header Styles */
 .header {
-    background-color: #806400;
+    background-color: #005d55;
     color: white;
     padding: 1rem 0;
     box-shadow: var(--shadow-md);
@@ -77,7 +77,7 @@ body {
 
 .logo i {
     font-size: 2rem;
-    color: #2d5016;
+    color: teal;
 }
 
 .logo h4 {
@@ -90,9 +90,9 @@ body {
 }
 
 .nav-btn {
-    border: 1px solid #2d5016;
+    border: 1px solid teal;
     background: rgba(255, 255, 255, 0.1);
-    color: #2d5016;
+    color: teal;
     padding: 0.5rem;
     border-radius: 50%;
     cursor: pointer;
@@ -111,7 +111,7 @@ body {
 
 /* Introduction Section Styles */
 .intro-section {
-padding: 2rem 1rem;
+    padding: 2rem 1rem;
     background: linear-gradient(135deg, rgba(74, 124, 46, 0.1), rgba(102, 187, 106, 0.1));
     border-radius: 15px;
 
@@ -292,19 +292,18 @@ padding: 2rem 1rem;
 }
 
 .search-container input {
+    background-color: #f8faf89c;
     flex: 1;
-    padding: 10px;
-    border: 2px solid var(--border-color);
+    padding: 0px 8px;
+    border: 1px solid teal;
     border-radius: 50px;
     transition: none;
-    color: var(--primary-color);
-    height: 100%;
+    color: teal;
     box-sizing: border-box;
     outline: none;
     transform: none;
     will-change: auto;
     font-size: 16px;
-    /* Prevents iOS zoom on focus */
 }
 
 .search-container input:focus {
@@ -343,7 +342,7 @@ padding: 2rem 1rem;
 }
 
 .player-section {
-    background-image: url("./my-photo/rest-room-mic.jpg!w700wp");
+    background-image: url("./my-photo/rest-room-mic.jpg");
     background-size: cover;
     color: var(--player-text);
     border-radius: 15px;
@@ -552,7 +551,7 @@ padding: 2rem 1rem;
 .episode-card {
     /* background-color: #005d27; */
     /* background: var(--card-bg); */
-    background-image: url("./my-photo/old-radio.jpg!w700wp");
+    background-image: url("./my-photo/radio1.jpg");
     background-size: cover;
     background-position: center;
     border-radius: 20px;
@@ -658,6 +657,11 @@ padding: 2rem 1rem;
     transform: scale(1);
 }
 
+.episode-card:hover .episode-duration {
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
 .episode-info {
     box-shadow: inset 0px 0px 11px 0px white;
     padding: 10px;
@@ -681,14 +685,16 @@ padding: 2rem 1rem;
 }
 
 .episode-duration {
-    color: brown;
+    color: #fff;
     display: flex;
     align-items: center;
-    border: 1px solid brown;
     gap: 0.5rem;
-    background-color: cornsilk;
-    padding: 2px 6px;
-    border-radius: 11px;
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    padding: 4px 8px;
+    border-radius: 15px;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
 }
 
 .episode-stats {
@@ -758,29 +764,36 @@ padding: 2rem 1rem;
     gap: 0.2rem;
 }
 
+header h3 {
+    color: teal;
+    margin: 0;
+}
+
 .listen-badge {
     gap: 4px;
     color: white;
-    padding: 6px 8px;
+    padding: 2px 6px;
     border-radius: 25px;
     display: flex;
     align-items: center;
     transition: all 0.3s ease;
-    box-shadow: 0 0 5px 0px teal;
+    flex-direction: row-reverse;
+    background-color: #005d55;
+    box-shadow: 0px -4px 3px 0px #2c3e2ce8;
 }
 
 
 .floating-player {
-    box-shadow: inset 0 0 7px 2px yellow;
+    box-shadow: inset 0 -3px 17px 12px #000000;
     position: fixed;
-    background-image: url(./my-photo/rest-room-mic.jpg!w700wp);
+    background-image: url(./my-photo/radio4.jpg);
     background-size: cover;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%) translateY(100px);
     backdrop-filter: blur(20px);
-    border-radius: 30px;
-    padding: 20px 20px 91px;
+    border-radius: 16px;
+    padding: 20px 20px 45px;
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
@@ -796,13 +809,13 @@ padding: 2rem 1rem;
 }
 
 .floating-player-content {
-    box-shadow: 0 0px 14px 0px teal;
+    box-shadow: inset 0 0px 14px 0px rgba(255, 255, 255, 1);
     display: flex;
     padding: 6px 8px;
     align-items: center;
     gap: 1.5rem;
     position: relative;
-    /* background-color: #004c0000; */
+    background-color: #1a211ab3;
     border-radius: 38px;
 }
 
@@ -845,7 +858,7 @@ padding: 2rem 1rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--player-text);
+    color: #fdffa9;
     font-weight: 600;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
@@ -1088,8 +1101,8 @@ padding: 2rem 1rem;
 }
 
 .action-btn {
-    background-color: transparent;
-    padding: 8px 10px;
+    background-color: #005d55;
+    padding: 4px 6px;
     border-radius: 20px;
     cursor: pointer;
     transition: var(--transition);
@@ -1098,7 +1111,7 @@ padding: 2rem 1rem;
     align-items: center;
     gap: 0.3rem;
     color: white;
-    box-shadow: 0 0 5px 0px teal;
+    box-shadow: 0px -4px 3px 0px #2c3e2ce8;
     border: none;
 }
 
@@ -1109,6 +1122,10 @@ padding: 2rem 1rem;
 
 .action-btn.favorited {
     background: var(--accent-color);
+}
+
+.favorite-btn {
+    padding: 7px 10px;
 }
 
 .action-btn.download:hover {
