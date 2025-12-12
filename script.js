@@ -590,7 +590,7 @@ class QuranPodcastPlayer {
                 <div class="episode-actions">
                     <button class="action-btn favorite-btn ${this.isFavorite(file) ? 'favorited' : ''}" data-id="${file.id}" data-action="favorite">
                         <i class="fas fa-heart"></i>
-                        ${this.isFavorite(file) ? 'مفضلة' : 'لمفضلة'}
+                        ${this.isFavorite(file) ? 'مفضلة' : 'المفضله'}
                     </button>
                     <button class="action-btn download" data-id="${file.id}" data-action="download">
                         <i class="fas fa-download"></i>
@@ -705,25 +705,7 @@ class QuranPodcastPlayer {
         this.updateFloatingPlayButton();
     }
 
-    handleInfiniteScroll() {
-        // Check if user has scrolled to the bottom of the page
-        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
-            // Load more files if we haven't loaded all of them yet
-            const totalFiles = 262; // Total number of audio files
-            if (this.audioFiles.length < totalFiles) {
-                this.currentPage++;
-                this.loadAudioFiles();
-            }
-        }
-    }
 
-    loadMoreFiles() {
-        const totalFiles = 262; // Total number of audio files
-        if (this.audioFiles.length < totalFiles) {
-            this.currentPage++;
-            this.loadAudioFiles();
-        }
-    }
 
     updatePlayButton() {
         const icon = this.playBtn.querySelector('i');
@@ -760,16 +742,6 @@ class QuranPodcastPlayer {
                 this.resumeTrack();
             }
         });
-
-        // Add infinite scroll listener
-        window.addEventListener('scroll', this.handleInfiniteScroll.bind(this));
-
-        // Add load more button listener
-        if (this.loadMoreBtn) {
-            this.loadMoreBtn.addEventListener('click', () => {
-                this.loadMoreFiles();
-            });
-        }
 
         // Previous button (for audio track navigation)
         this.prevBtn.addEventListener('click', () => {
