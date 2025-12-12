@@ -759,7 +759,7 @@ body {
 
 .episode-actions {
     display: flex;
-    gap: 0.8rem;
+    gap: 2px;
     margin-top: 1rem;
     align-items: center;
 }
@@ -1159,7 +1159,7 @@ header h3 {
 
 .action-btn {
     background-color: #005d55;
-    padding: 6px 12px;
+    padding: 6px 7px;
     border-radius: 25px;
     cursor: pointer;
     transition: all 0.3s ease;
