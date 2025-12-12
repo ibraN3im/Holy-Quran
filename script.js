@@ -584,13 +584,13 @@ class QuranPodcastPlayer {
                 <div class="episode-meta">
                     <span class="episode-duration">
                         <i class="fas fa-clock"></i>
-                        ${file.duration}
+                        <span class="duration-text">${file.duration}</span>
                     </span>
                 </div>
                 <div class="episode-actions">
                     <button class="action-btn favorite-btn ${this.isFavorite(file) ? 'favorited' : ''}" data-id="${file.id}" data-action="favorite">
                         <i class="fas fa-heart"></i>
-                        ${this.isFavorite(file) ? 'مفضلة' : 'لمفضلة'}
+                        ${this.isFavorite(file) ? 'مفضلة' : 'المفضلة'}
                     </button>
                     <button class="action-btn download" data-id="${file.id}" data-action="download">
                         <i class="fas fa-download"></i>
@@ -606,6 +606,9 @@ class QuranPodcastPlayer {
                 </div>
             </div>
         `;
+
+        // Fetch and display the actual duration
+        this.loadDurationForCard(file, card);
 
         card.addEventListener('click', (e) => {
             if (e.target.closest('.action-btn')) {
@@ -623,6 +626,40 @@ class QuranPodcastPlayer {
             }
         });
         return card;
+    }
+
+    loadDurationForCard(file, card) {
+        // Create an audio element to load metadata
+        const audio = new Audio();
+        audio.src = file.url;
+        
+        const updateCardDuration = () => {
+            if (audio.duration && !isNaN(audio.duration)) {
+                const minutes = Math.floor(audio.duration / 60);
+                const seconds = Math.floor(audio.duration % 60);
+                const durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                // Update the file's duration
+                const fileIndex = this.audioFiles.findIndex(f => f.id === file.id);
+                if (fileIndex !== -1) {
+                    this.audioFiles[fileIndex].duration = durationText;
+                }
+                
+                // Update the card's display
+                const durationElement = card.querySelector('.duration-text');
+                if (durationElement) {
+                    durationElement.textContent = durationText;
+                }
+                
+                audio.removeEventListener('loadedmetadata', updateCardDuration);
+            }
+        };
+        
+        audio.addEventListener('loadedmetadata', updateCardDuration);
+        audio.addEventListener('error', () => {
+            console.error('Error loading audio:', file.filename);
+            audio.removeEventListener('loadedmetadata', updateCardDuration);
+        });
     }
 
     playTrack(file) {
