@@ -69,6 +69,9 @@ class QuranPodcastPlayer {
         this.visitorCount = document.getElementById('visitorCount');
         this.listenCount = document.getElementById('listenCount');
         this.downloadCount = document.getElementById('downloadCount');
+
+        // Refresh button
+        this.refreshDurationsBtn = document.getElementById('refreshDurationsBtn');
     }
 
     loadFavorites() {
@@ -129,6 +132,91 @@ class QuranPodcastPlayer {
                 console.error('Download failed:', error);
                 this.showError('فشل في تحميل الملف');
             });
+    }
+
+    shareFile(file) {
+        const shareUrl = `https://ibran3im.github.io/Holy-Quran/#${file.filename}`;
+        const shareTitle = `تفسير القرآن - ${file.title}`;
+        const shareText = `استمع إلى تفسير ${file.title} للدكتور عبد الطيب مع الشيخ صديق أحمد حمدون`;
+
+        // Check if Web Share API is supported
+        if (navigator.share) {
+            navigator.share({
+                title: shareTitle,
+                text: shareText,
+                url: shareUrl
+            }).catch(error => {
+                console.log('Sharing failed:', error);
+                // Fallback to copy URL
+                this.copyToClipboard(shareUrl);
+            });
+        } else {
+            // Fallback to copy URL
+            this.copyToClipboard(shareUrl);
+        }
+    }
+
+    copyToClipboard(text) {
+        // Create temporary textarea
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+
+        try {
+            document.execCommand('copy');
+            this.showNotification('تم نسخ الرابط إلى الحافظة');
+        } catch (err) {
+            this.showNotification('فشل في نسخ الرابط');
+        }
+
+        document.body.removeChild(textarea);
+    }
+
+    showNotification(message) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            z-index: 10000;
+            font-size: 14px;
+            animation: fadeInOut 3s forwards;
+        `;
+
+        // Add animation styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInOut {
+                0% { opacity: 0; bottom: 0; }
+                10% { opacity: 1; bottom: 20px; }
+                90% { opacity: 1; bottom: 20px; }
+                100% { opacity: 0; bottom: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        document.body.appendChild(notification);
+
+        // Remove notification after animation
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+                if (style.parentNode) {
+                    style.parentNode.removeChild(style);
+                }
+            }
+        }, 3000);
     }
 
     loadStats() {
@@ -328,31 +416,57 @@ class QuranPodcastPlayer {
     }
 
     async preloadDurations(fileData) {
-        // Preload durations for the first 10 files to improve user experience
-        const preloadCount = Math.min(10, fileData.length);
+        // Preload durations for the first 20 files to improve user experience
+        const preloadCount = Math.min(20, fileData.length);
 
-        for (let i = 0; i < preloadCount; i++) {
-            try {
-                const duration = await this.getAudioDuration(fileData[i].url);
-                fileData[i].duration = duration;
+        // Process durations in batches to avoid overwhelming the browser
+        const batchSize = 5;
+        for (let i = 0; i < preloadCount; i += batchSize) {
+            const batchPromises = [];
+            const endIndex = Math.min(i + batchSize, preloadCount);
 
-                // Update the UI for this file if it's already rendered
-                this.updateDurationInUI(fileData[i].id, duration);
-            } catch (error) {
-                console.warn(`Failed to load duration for ${fileData[i].filename}:`, error);
+            for (let j = i; j < endIndex; j++) {
+                batchPromises.push(
+                    this.getAudioDuration(fileData[j].url)
+                        .then(duration => {
+                            fileData[j].duration = duration;
+                            // Update the UI for this file if it's already rendered
+                            this.updateDurationInUI(fileData[j].id, duration);
+                        })
+                        .catch(error => {
+                            console.warn(`Failed to load duration for ${fileData[j].filename}:`, error);
+                        })
+                );
             }
+
+            // Wait for all promises in this batch to complete
+            await Promise.all(batchPromises);
         }
     }
 
     updateDurationInUI(fileId, duration) {
-        const fileCard = document.querySelector(`[data-id="${fileId}"]`);
-        if (fileCard) {
+        // Update all instances of this file's duration display
+        const fileCards = document.querySelectorAll(`[data-id="${fileId}"]`);
+        fileCards.forEach(fileCard => {
             const durationElement = fileCard.querySelector('.episode-duration');
             if (durationElement) {
                 durationElement.innerHTML = `
                     <i class="fas fa-clock"></i>
                     ${duration}
                 `;
+            }
+        });
+
+        // Also update in the main player if this is the current track
+        if (this.currentTrack && this.currentTrack.id === fileId) {
+            const mainDurationElement = document.getElementById('duration');
+            if (mainDurationElement) {
+                mainDurationElement.textContent = duration;
+            }
+
+            const floatingDurationElement = document.getElementById('floatingDuration');
+            if (floatingDurationElement) {
+                floatingDurationElement.textContent = duration;
             }
         }
     }
@@ -388,6 +502,32 @@ class QuranPodcastPlayer {
                 if (listenCount) listenCount.textContent = `${stats.listens} استماع`;
                 if (downloadCount) downloadCount.textContent = `${stats.downloads} تحميل`;
             }
+        }
+    }
+
+    async refreshAllDurations() {
+        // Refresh durations for all currently displayed files
+        const displayedFiles = Array.from(document.querySelectorAll('.episode-card')).map(card => {
+            const id = parseInt(card.getAttribute('data-id'));
+            return this.audioFiles.find(f => f.id === id);
+        }).filter(Boolean);
+
+        // Process in small batches to avoid overwhelming the browser
+        const batchSize = 3;
+        for (let i = 0; i < displayedFiles.length; i += batchSize) {
+            const batch = displayedFiles.slice(i, i + batchSize);
+            const batchPromises = batch.map(file =>
+                this.getAudioDuration(file.url)
+                    .then(duration => {
+                        file.duration = duration;
+                        this.updateDurationInUI(file.id, duration);
+                    })
+                    .catch(error => {
+                        console.warn(`Failed to refresh duration for ${file.filename}:`, error);
+                    })
+            );
+
+            await Promise.all(batchPromises);
         }
     }
 
@@ -623,17 +763,21 @@ class QuranPodcastPlayer {
                 <div class="episode-actions">
                     <button class="action-btn favorite-btn ${this.isFavorite(file) ? 'favorited' : ''}" data-id="${file.id}" data-action="favorite">
                         <i class="fas fa-heart"></i>
-                        ${this.isFavorite(file) ? 'مفضله' : 'المفضله'}
+                        ${this.isFavorite(file) ? '' : ''}
                     </button>
                     <button class="action-btn download" data-id="${file.id}" data-action="download">
-                        تحميل
-                        <span class="download-stats downloads">
-                             ${file.downloads}
-                        </span>
+                        <i class="fas fa-download"></i>
+                       تحميل
                     </button>
-                    <span class="listen-badge listens">
-                        ${file.listens} استماع
-                    </span>
+                    <button class="action-btn share" data-id="${file.id}" data-action="share">
+                        <i class="fas fa-share-alt"></i>    
+                       مشاركة
+                    </button>
+                    <button class="action-btn listen-badge" data-id="${file.id}" data-action="listen-badge">
+                        <i class="fas fa-headphones"></i>
+                       ستماع
+                    </button>
+                  
                 </div>
             </div>
         `;
@@ -648,6 +792,11 @@ class QuranPodcastPlayer {
                     this.toggleFavorite(file);
                 } else if (action === 'download') {
                     this.downloadFile(file);
+                } else if (action === 'share') {
+                    this.shareFile(file);
+                } else if (action === 'listen-badge') {
+                    this.playTrack(file);
+                    this.trackFileListen(file.filename);
                 }
             } else {
                 this.playTrack(file);
@@ -1010,6 +1159,25 @@ class QuranPodcastPlayer {
                 }
             }
         });
+
+        // Refresh durations button
+        if (this.refreshDurationsBtn) {
+            this.refreshDurationsBtn.addEventListener('click', async () => {
+                this.refreshDurationsBtn.disabled = true;
+                this.refreshDurationsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحديث...';
+
+                try {
+                    await this.refreshAllDurations();
+                    this.showNotification('تم تحديث جميع المدد الزمنية');
+                } catch (error) {
+                    console.error('Failed to refresh durations:', error);
+                    this.showNotification('فشل في تحديث المدد الزمنية');
+                } finally {
+                    this.refreshDurationsBtn.disabled = false;
+                    this.refreshDurationsBtn.innerHTML = '<i class="fas fa-sync-alt"></i> تحديث المدد الزمنية';
+                }
+            });
+        }
     }
 
     formatTime(seconds) {

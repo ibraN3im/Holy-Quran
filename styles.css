@@ -496,6 +496,34 @@ body {
     color: var(--text-light);
 }
 
+.refresh-btn {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.refresh-btn:hover {
+    background: linear-gradient(135deg, #2980b9, #1f618d);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+}
+
+.refresh-btn:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 /* Episodes Section */
 .episodes-section {
     min-height: 600px;
@@ -748,9 +776,25 @@ body {
     border-color: var(--accent-color);
 }
 
+/* .action-btn.favorited {
+    background: var(--accent-color);
+} */
 .action-btn.download {
+    background: linear-gradient(135deg, #27ae60, #219653);
     color: white;
     position: relative;
+}
+
+.action-btn.share {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    position: relative;
+}
+
+.action-btn.share:hover {
+    background: linear-gradient(135deg, #2980b9, #1f618d);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
 }
 
 .download-stats {
@@ -772,7 +816,7 @@ header h3 {
 .listen-badge {
     gap: 4px;
     color: white;
-    padding: 2px 6px;
+    padding: 4px 8px;
     border-radius: 25px;
     display: flex;
     align-items: center;
@@ -780,6 +824,19 @@ header h3 {
     flex-direction: row-reverse;
     background-color: #005d55;
     box-shadow: 0px -4px 3px 0px #2c3e2ce8;
+    font-size: 0.8rem;
+    border: none;
+    cursor: pointer;
+}
+
+.listen-badge:hover {
+    background-color: #007a6e;
+    transform: translateY(-2px);
+}
+
+.listen-count {
+    font-weight: bold;
+    margin-left: 4px;
 }
 
 
@@ -1102,27 +1159,27 @@ header h3 {
 
 .action-btn {
     background-color: #005d55;
-    padding: 4px 6px;
-    border-radius: 20px;
+    padding: 6px 12px;
+    border-radius: 25px;
     cursor: pointer;
-    transition: var(--transition);
+    transition: all 0.3s ease;
     font-weight: bold;
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.5rem;
     color: white;
-    box-shadow: 0px -4px 3px 0px #2c3e2ce8;
+    box-shadow: inset 0px -5px 9px 0px #ffffff;
     border: none;
+    font-size: 0.9rem;
 }
 
 .action-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
+    background-color: #007a6e;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.action-btn.favorited {
-    background: var(--accent-color);
-}
+
 
 .favorite-btn {
     padding: 7px 10px;
