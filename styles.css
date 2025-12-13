@@ -62,7 +62,9 @@ body {
     top: 0;
     z-index: 100;
 }
-
+h6 {
+       text-align: center;
+}
 .header .container {
     display: flex;
     justify-content: space-between;
