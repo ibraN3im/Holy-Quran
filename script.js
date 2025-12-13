@@ -7,6 +7,7 @@ class QuranPodcastPlayer {
         this.currentTrack = null;
         this.isPlaying = false;
         this.currentFilter = 'all';
+        this.currentSearchTerm = ''; // Track current search term
         this.favorites = this.loadFavorites();
         this.stats = this.loadStats();
 
@@ -585,19 +586,23 @@ class QuranPodcastPlayer {
     }
 
     renderEpisodes(filter = 'all', searchTerm = '') {
+        // Store current filter and search term
+        this.currentFilter = filter;
+        this.currentSearchTerm = searchTerm;
+        
         // Don't render if audioFiles is empty (loading in progress)
         if (this.audioFiles.length === 0) {
             return;
         }
 
-        let filteredFiles = this.audioFiles;
+        let filteredFiles = [...this.audioFiles]; // Create a copy to avoid modifying original
 
         // Apply filter
         if (filter !== 'all') {
             filteredFiles = filteredFiles.filter(file => file.type === filter);
         }
 
-        // Enhanced search for ranges like "11-33" with debouncing
+        // Apply search filter
         if (searchTerm) {
             const cleanSearch = searchTerm.replace(/[^0-9-]/g, '');
             filteredFiles = filteredFiles.filter(file => {
@@ -642,33 +647,44 @@ class QuranPodcastPlayer {
             });
         }
 
-        // Only clear the grid if we have results to render
-        if (filteredFiles.length > 0) {
-            this.episodesGrid.innerHTML = '';
+        // Clear the grid
+        this.episodesGrid.innerHTML = '';
 
-            // Render files for current page
-            // When no search/filter is applied, use audioFiles directly (already paginated)
-            // When search/filter is applied, paginate the filtered results
-            let filesToRender = filteredFiles;
-            if (filter !== 'all' || searchTerm) {
-                const startIndex = (this.currentPage - 1) * this.filesPerPage;
-                const endIndex = startIndex + this.filesPerPage;
-                filesToRender = filteredFiles.slice(startIndex, endIndex);
+        // Show "no results" if filtered results are empty
+        if (filteredFiles.length === 0) {
+            if (searchTerm || filter !== 'all') {
+                this.episodesGrid.innerHTML = '<div class="loading">لا توجد نتائج مطابقة</div>';
             }
-
-            filesToRender.forEach(file => {
-                const episodeCard = this.createEpisodeCard(file);
-                this.episodesGrid.appendChild(episodeCard);
-            });
-        } else if (searchTerm || filter !== 'all') {
-            // Only show "no results" if there was a search/filter applied
-            this.episodesGrid.innerHTML = '<div class="loading">لا توجد نتائج مطابقة</div>';
             return;
         }
 
-        // Show pagination controls with page numbers
-        const totalFiles = 262;
-        const totalPages = Math.ceil(totalFiles / this.filesPerPage);
+        // Calculate pagination for filtered results
+        let filesToRender = filteredFiles;
+        let totalPages = 1;
+        
+        if (filter !== 'all' || searchTerm) {
+            // Apply pagination to filtered results
+            totalPages = Math.ceil(filteredFiles.length / this.filesPerPage);
+            
+            // Ensure current page doesn't exceed available pages
+            if (this.currentPage > totalPages && totalPages > 0) {
+                this.currentPage = Math.max(1, totalPages);
+            }
+            
+            const startIndex = (this.currentPage - 1) * this.filesPerPage;
+            const endIndex = startIndex + this.filesPerPage;
+            filesToRender = filteredFiles.slice(startIndex, endIndex);
+        } else {
+            // For non-filtered results, calculate total pages from all files
+            const totalFiles = 262;
+            totalPages = Math.ceil(totalFiles / this.filesPerPage);
+        }
+
+        // Render the files
+        filesToRender.forEach(file => {
+            const episodeCard = this.createEpisodeCard(file);
+            this.episodesGrid.appendChild(episodeCard);
+        });
 
         // Show pagination controls
         if (this.paginationContainer) {
@@ -733,9 +749,15 @@ class QuranPodcastPlayer {
 
     goToPage(pageNumber) {
         this.currentPage = pageNumber;
-        // Reset the audio files array to load fresh data for this page
+        // When changing page, reload data for that page
         this.audioFiles = [];
         this.loadAudioFiles();
+        
+        // Scroll to top of episodes section
+        const episodesSection = document.querySelector('.episodes-section');
+        if (episodesSection) {
+            episodesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
     createEpisodeCard(file) {
@@ -899,22 +921,17 @@ class QuranPodcastPlayer {
     }
 
     handleInfiniteScroll() {
-        // Check if user has scrolled to the bottom of the page
-        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
-            // Load more files if we haven't loaded all of them yet
-            const totalFiles = 262; // Total number of audio files
-            if (this.audioFiles.length < totalFiles) {
-                this.currentPage++;
-                this.loadAudioFiles();
-            }
-        }
+        // Infinite scroll is disabled - use pagination only
+        // This prevents automatic page loading when scrolling
     }
 
     loadMoreFiles() {
-        const totalFiles = 262; // Total number of audio files
-        if (this.audioFiles.length < totalFiles) {
-            this.currentPage++;
-            this.loadAudioFiles();
+        // Load more files is disabled - use pagination only
+        // Go to next page if available
+        const totalFiles = 262;
+        const totalPages = Math.ceil(totalFiles / this.filesPerPage);
+        if (this.currentPage < totalPages) {
+            this.goToPage(this.currentPage + 1);
         }
     }
 
@@ -1072,12 +1089,14 @@ class QuranPodcastPlayer {
 
         this.searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.trim();
+            this.currentPage = 1; // Reset to first page when searching
             this.renderEpisodes(this.currentFilter, searchTerm);
         });
 
         this.searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 const searchTerm = e.target.value.trim();
+                this.currentPage = 1; // Reset to first page when searching
                 this.renderEpisodes(this.currentFilter, searchTerm);
             }
         });
@@ -1088,6 +1107,7 @@ class QuranPodcastPlayer {
                 this.filterButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.currentFilter = btn.dataset.filter;
+                this.currentPage = 1; // Reset to first page when filtering
                 this.renderEpisodes(this.currentFilter, this.searchInput.value);
             });
         });
