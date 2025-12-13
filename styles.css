@@ -1231,14 +1231,9 @@ header h3 {
     background-color: #8D6E63;
     padding: 78px 8px 8px;
     border: 2px solid rgb(255 255 255);
-    transition: var(--transition);
 }
 
-.creator-info:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    background: rgba(255, 255, 255, 0.15);
-}
+
 
 .creator-photo {
     position: absolute;
